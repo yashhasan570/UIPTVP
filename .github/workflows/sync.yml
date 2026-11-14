@@ -22,14 +22,28 @@ jobs:
         run: |
           git clone https://github.com/Emrodev/IPVIO-Stream /tmp/upstream
           python3 scripts/migrate.py /tmp/upstream
-          cd /tmp/upstream
-          git config user.name "uiptvp-sync"
-          git config user.email "actions@users.noreply.github.com"
 
-      - name: Copy result into this repository and push
+      - name: Copy result into this repository
         run: |
           cd "$GITHUB_WORKSPACE"
-          rsync -a --exclude '.git' --exclude 'scripts' --exclude '.github/workflows/sync.yml' /tmp/upstream/ ./
+          rsync -a \
+            --exclude '.git' \
+            --exclude 'scripts' \
+            --exclude '.github/workflows/sync.yml' \
+            --exclude 'app/src/main/res/drawable/ic_logo_fg.png' \
+            --exclude 'app/src/main/res/drawable/ic_brand_mark.png' \
+            --exclude 'app/src/main/res/drawable/banner.png' \
+            --exclude 'app/src/main/res/mipmap-*' \
+            /tmp/upstream/ ./
+
+      - name: Refresh the UIPTVP icon set
+        run: |
+          pip install --quiet pillow
+          python3 scripts/icons/install_icons.py "$GITHUB_WORKSPACE"
+
+      - name: Commit and push
+        run: |
+          cd "$GITHUB_WORKSPACE"
           git config user.name "uiptvp-sync"
           git config user.email "actions@users.noreply.github.com"
           git add -A
