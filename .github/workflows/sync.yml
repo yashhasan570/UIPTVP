@@ -1,0 +1,37 @@
+name: Sync rebranded source from upstream
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Clone upstream and apply the rebrand
+        run: |
+          git clone https://github.com/Emrodev/IPVIO-Stream /tmp/upstream
+          python3 scripts/migrate.py /tmp/upstream
+          cd /tmp/upstream
+          git config user.name "uiptvp-sync"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Copy result into this repository and push
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          rsync -a --exclude '.git' --exclude 'scripts' --exclude '.github/workflows/sync.yml' /tmp/upstream/ ./
+          git config user.name "uiptvp-sync"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Sync rebranded source from upstream (Universal IPTV Player)"
+          git push
